@@ -65,7 +65,17 @@ class Post(models.Model):
                                                   ))
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name='Добавлено')
+    image = models.ImageField(upload_to='post_images/', blank=True, null=True,
+                              verbose_name='Изображение')
 
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(Post, related_name='comments',
+                             on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

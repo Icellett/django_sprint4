@@ -5,6 +5,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from .forms import PostForm
 
 
 def index(request):
@@ -39,30 +40,49 @@ def post_detail(request, pk):
                              category__is_published=True)
     return render(request, 'blog/detail.html', {'post': post})
 
+
 def custom_403_view(request, exception):
     return render(request, 'pages/403.html', status=403)
+
 
 def custom_404_view(request, exception):
     return render(request, 'pages/404.html', status=404)
 
+
 def custom_500_view(request):
     return render(request, 'pages/500.html', status=500)
+
 
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('login')  # Перенаправление после успешной регистрации
-    else:
+            return redirect('login')
         form = UserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
+
 
 @login_required
 def profile(request, username):
     user = get_object_or_404(User, username=username)
-    post_list = Post.objects.filter(author=user)  # Получаем публикации пользователя
+    post_list = Post.objects.filter(author=user)
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'profile.html', {'user': user, 'page_obj': page_obj})
+    return render(request, 'profile.html', {'user': user,
+                                            'page_obj': page_obj})
+
+
+@login_required
+def create_post(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            return redirect('blog:index')
+    else:
+        form = PostForm()
+    return render(request, 'blog/create.html', {'form': form})

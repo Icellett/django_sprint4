@@ -1,11 +1,11 @@
 from datetime import datetime
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Post, Category
+from .models import Post, Category, Comment
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from .forms import PostForm
+from .forms import PostForm, CommentForm
 
 
 def index(request):
@@ -38,7 +38,19 @@ def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk, is_published=True,
                              pub_date__lte=datetime.now(),
                              category__is_published=True)
-    return render(request, 'blog/detail.html', {'post': post})
+    comments = post.comments.all()  # Получаем все комментарии к посту
+    form = CommentForm()  # Создаем пустую форму для комментариев
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            return redirect('view_post', post_id=post.id)
+    return render(request, 'blog/detail.html', {'post': post, 'form': form,
+                                                'comments': comments})
 
 
 def custom_403_view(request, exception):
@@ -70,8 +82,8 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'profile.html', {'user': user,
-                                            'page_obj': page_obj})
+    return render(request, 'blog/profile.html', {'user': user,
+                                                 'page_obj': page_obj})
 
 
 @login_required
@@ -86,3 +98,65 @@ def create_post(request):
     else:
         form = PostForm()
     return render(request, 'blog/create.html', {'form': form})
+
+
+@login_required
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id, author=request.user)
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('post_detail', post_id=post.id)
+    else:
+        form = PostForm(instance=post)
+    return render(request, 'blog/create.html', {'form': form})
+
+
+@login_required
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id, author=request.user)
+    if request.method == 'POST':
+        post.delete()
+        return redirect('profile', username=request.user.username)
+    return render(request, 'blog/confirm_delete.html', {'post': post})
+
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            return redirect('blog:post_detail', pk=post.id)
+    else:
+        form = CommentForm()
+    return render(request, 'blog/add_comment.html',
+                  {'form': form, 'post': post})
+
+
+@login_required
+def edit_comment(request, post_id, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, author=request.user)
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect('view_post', post_id=post_id)
+    else:
+        form = CommentForm(instance=comment)
+    return render(request, 'blog/add_comment.html',
+                  {'form': form, 'post': comment.post})
+
+
+@login_required
+def delete_comment(request, post_id, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, author=request.user)
+    if request.method == 'POST':
+        comment.delete()
+        return redirect('blog:post_detail', pk=post_id)
+    return render(request, 'blog/comment.html', {'comment': comment})

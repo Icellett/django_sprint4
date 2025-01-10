@@ -1,5 +1,6 @@
 from typing import Any
-
+from .forms import PostForm, ProfileForm, CommentForm
+from .models import Post, Category, Comment, User
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect
@@ -8,9 +9,6 @@ from django.urls import reverse
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
-
-from .forms import PostForm, ProfileForm, CommentForm
-from .models import Post, Category, Comment, User
 
 
 POSTS_PER_PAGE = 10

@@ -26,13 +26,7 @@ SECRET_KEY = 'django-insecure-sv$!l^ly@*aj*a59_nmsxl-q%k(x^1$g&d@x#kw5=^3qzfm1d=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ['*']
-
-ALLOWED_HOSTS = [
-    'www.vilmen.pythonanywhere.com',
-    'vilmen.pythonanywhere.com',
-]
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -147,11 +141,13 @@ EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
 STATIC_URL = '/static/'
 
+MEDIA_URL = '/media/'
+
 STATICFILES_DIRS = [
-    BASE_DIR / 'static/',
+    BASE_DIR / 'static_dev',
 ]
 
-MEDIA_ROOT = BASE_DIR / 'media/'
+MEDIA_ROOT = (BASE_DIR / 'media')
 
 if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, "static")
